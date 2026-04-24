@@ -345,6 +345,21 @@ Built with:
 - [FastLED](https://github.com/FastLED/FastLED) — LED strip control
 - [arduino-cli](https://arduino.github.io/arduino-cli/) — build toolchain
 
+## Notes
+
+- The generic USB-C ESP32 seems to run all 150 LEDs without external power, but this may not be ideal for the board's longevity.
+- The version with the screen was helpful during troubleshooting, but doesn't add practical value to the final project.
+- Wi-Fi and Bluetooth are disabled on these devices since they connect to a work machine and don't require network access.
+
+## Affiliate Links
+
+You can find these parts cheaper elsewhere, but if you found awesome value in this project, these links help support the work:
+
+- [LILYGO T-Display S3 AMOLED Plus ESP32-S3 1.91-inch AMOLED Touch Display TTGO Development Board](https://amzn.to/4d50xwh)
+- [BTF-LIGHTING WS2812B IC RGB LED Strip, UL Listed, Pure Gold Wires, DC5V 16.4FT 150LED 5050SMD, Individually Addressable](https://amzn.to/4vLLAXz)
+- [ELEGOO 3PCS ESP-32 Development Board USB-C, 2.4GHz Dual Mode WiFi+Bluetooth 4.2 Dual Core Microcontroller Support AP/STA/AP+STA, CP2102 Chip](https://amzn.to/4sO4fPv)
+- [BTF-LIGHTING 5V 6A 30W Power Supply Adapter ETL Listed, 100-240V AC to 5V DC Converter](https://amzn.to/3P1v30X)
+
 ## License
 
 MIT
