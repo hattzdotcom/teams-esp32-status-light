@@ -1,0 +1,14 @@
+# Build artifacts
+busy_light_s3/build/
+
+# Personal photos
+*.jpg
+*.png
+
+# Environment files
+.env
+*.token_cache*
+
+# OS files
+Thumbs.db
+.DS_Store
