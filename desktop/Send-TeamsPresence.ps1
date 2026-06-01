@@ -24,6 +24,8 @@
       pwsh -WindowStyle Hidden -File "path\to\Send-TeamsPresence.ps1"
 #>
 
+$ScriptVersion = "1.0.0"
+
 [CmdletBinding()]
 param(
     [int]$PollIntervalMs = 2000,     # How often to check the log file
@@ -109,6 +111,7 @@ function Get-PresenceFromLine {
 # ─── Main ─────────────────────────────────────────────────────
 Write-Host "╔══════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "║   Teams Busy Light — Local Log Monitor   ║" -ForegroundColor Cyan
+Write-Host "║              v$($ScriptVersion.PadRight(30))║" -ForegroundColor Cyan
 Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Cyan
 
 # Find Teams log
@@ -156,7 +159,9 @@ try {
 }
 
 # Send last known presence on startup (so light is correct immediately)
-$lastStatus = [byte]0xFF
+$lastStatus       = [byte]0xFF
+$lastKeepAlive    = [DateTime]::Now
+$KeepAliveSeconds = 1800           # 30 minutes
 $lastLogPath = $logPath
 $lastFileSize = (Get-Item $logPath).Length
 
@@ -193,10 +198,27 @@ Write-Host ""
 
 try {
     while ($true) {
+        $ts = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+        # ── Keep-alive: resend current status every 30 minutes ──
+        if ($lastStatus -ne 0xFF -and ([DateTime]::Now - $lastKeepAlive).TotalSeconds -ge $KeepAliveSeconds) {
+            $lastKeepAlive = [DateTime]::Now
+            $kaName = $StatusNames[[int]$lastStatus]
+            Write-Host "[$ts] [KA] Keep-alive: resending 0x$($lastStatus.ToString('X2')) ($kaName)" -ForegroundColor DarkCyan
+            try {
+                $serial.Write([byte[]]@($lastStatus), 0, 1)
+                Start-Sleep -Milliseconds 100
+                while ($serial.BytesToRead -gt 0) {
+                    $ack = $serial.ReadLine()
+                    Write-Host "  ESP32: $ack" -ForegroundColor DarkGray
+                }
+            } catch { Write-Warning "Keep-alive write failed: $_" }
+        }
+
         # Check if Teams started a new log file
         $currentLog = Find-TeamsLog
         if ($currentLog -and $currentLog -ne $lastLogPath) {
-            Write-Host "[INFO] Teams rotated log → $currentLog" -ForegroundColor Yellow
+            Write-Host "[$ts] [INFO] Teams rotated log → $currentLog" -ForegroundColor Yellow
             $lastLogPath = $currentLog
             $logPath = $currentLog
             $lastFileSize = 0  # read new file from start
@@ -227,7 +249,6 @@ try {
 
                 if ($cmd -ne $lastStatus) {
                     $name = $StatusNames[[int]$cmd]
-                    $ts = Get-Date -Format "HH:mm:ss"
                     Write-Host "[$ts] $latestPresence → 0x$($cmd.ToString('X2')) ($name)" -ForegroundColor White
 
                     # Send to ESP32
@@ -246,7 +267,7 @@ try {
                         try { $serial.Close() } catch {}
                         Start-Sleep -Seconds 2
                         $serial.Open()
-                        Write-Host "[INFO] Serial reconnected" -ForegroundColor Yellow
+                        Write-Host "[$ts] [INFO] Serial reconnected" -ForegroundColor Yellow
                     }
 
                     $lastStatus = $cmd
